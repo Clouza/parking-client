@@ -35,7 +35,7 @@ class LibCameraWrapper:
                 '--denoise', 'auto',  # automatic noise reduction
                 '--awb', 'auto',      # auto white balance
                 '--metering', 'centre', # center weighted metering
-                '--exposure', 'auto', # auto exposure
+                '--ev', '0',          # exposure compensation
                 '--gain', '1.0',      # reasonable gain
                 '--output', temp_path
             ]
