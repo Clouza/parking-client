@@ -426,14 +426,16 @@ class IntegratedCameraClient:
                         self.logger.warning("Failed to send status")
                     last_status = current_time
 
-                # Send preview capture every 10 seconds
-                if not hasattr(self, 'last_preview_time'):
-                    self.last_preview_time = 0
-
-                if current_time - self.last_preview_time > 10:
-                    if self.send_capture_for_preview():
-                        self.logger.debug("Preview capture sent")
-                    self.last_preview_time = current_time
+                # Disable periodic preview capture to avoid camera conflicts
+                # Preview images will be sent only on triggers to ensure high quality
+                # # Send preview capture every 10 seconds
+                # if not hasattr(self, 'last_preview_time'):
+                #     self.last_preview_time = 0
+                #
+                # if current_time - self.last_preview_time > 10:
+                #     if self.send_capture_for_preview():
+                #         self.logger.debug("Preview capture sent")
+                #     self.last_preview_time = current_time
 
                 time.sleep(5)  # Main loop sleep
 
