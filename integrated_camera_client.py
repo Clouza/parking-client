@@ -290,7 +290,7 @@ class IntegratedCameraClient:
         return None
 
     def send_capture_for_preview(self):
-        """Send camera capture for preview purposes"""
+        """Send high-quality camera capture for preview purposes"""
         try:
             image = self.capture_image()
             if image is not None:
@@ -304,14 +304,14 @@ class IntegratedCameraClient:
                     "timestamp": datetime.now().isoformat()
                 }
 
-                response = requests.post(f"{self.server_url}/api/detection/result", json=payload, timeout=10)
+                response = requests.post(f"{self.server_url}/api/detection/result", json=payload, timeout=15)
                 if response.status_code == 200:
-                    self.logger.debug("Preview capture sent successfully")
+                    self.logger.debug("High-quality preview capture sent successfully")
                     return True
                 else:
                     self.logger.warning(f"Preview capture failed: {response.status_code}")
             else:
-                self.logger.warning("Failed to capture image for preview")
+                self.logger.warning("Failed to capture high-quality image for preview")
         except Exception as e:
             self.logger.error(f"Preview capture failed: {e}")
         return False
@@ -350,24 +350,21 @@ class IntegratedCameraClient:
                 trigger_type = self.check_for_triggers()
 
                 if trigger_type:
-                    self.logger.info(f"Processing {trigger_type} detection...")
+                    self.logger.info(f"Processing {trigger_type} capture...")
 
-                    # Capture image
+                    # Capture high-quality image for user review
                     image = self.capture_image()
                     if image is not None:
-                        # Detect plate
-                        plate_text, confidence = self.simple_plate_detection(image)
-
-                        # Encode image
+                        # Encode image only (no detection yet)
                         image_data = self.encode_image(image)
 
-                        # Send detection result
-                        result = self.send_detection_result(plate_text, confidence, image_data)
+                        # Send capture result without plate detection
+                        result = self.send_detection_result("", 0.0, image_data)
 
                         if result:
-                            self.logger.info(f"Plate detected: {plate_text} (confidence: {confidence:.2f})")
+                            self.logger.info(f"High-quality image captured and sent for user review")
                         else:
-                            self.logger.warning("Failed to send detection result")
+                            self.logger.warning("Failed to send capture result")
 
                 last_trigger_check = current_time
 
