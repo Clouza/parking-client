@@ -163,26 +163,57 @@ class IntegratedCameraClient:
 
         if camera_role == 'entrance' and self.config['features']['entrance_detection']:
             try:
-                response = requests.get(f"{self.server_url}/api/camera/trigger-entrance", timeout=5)
+                # use POST request with camera data
+                payload = {
+                    "camera_id": self.camera_id,
+                    "camera_role": camera_role,
+                    "status": "requesting_trigger"
+                }
+                response = requests.post(f"{self.server_url}/api/camera/trigger-entrance",
+                                       json=payload, timeout=5)
                 if response.status_code == 200:
                     data = response.json()
-                    if data.get('trigger', False):
+                    if data.get('success', False):
                         self.logger.info("Entrance trigger received")
                         return "entrance"
-            except:
+            except Exception as e:
+                self.logger.warning(f"Failed to check entrance trigger: {e}")
                 pass
 
         elif camera_role == 'exit' and self.config['features']['exit_detection']:
             try:
-                response = requests.get(f"{self.server_url}/api/camera/trigger-exit", timeout=5)
+                # use POST request with camera data
+                payload = {
+                    "camera_id": self.camera_id,
+                    "camera_role": camera_role,
+                    "status": "requesting_trigger"
+                }
+                response = requests.post(f"{self.server_url}/api/camera/trigger-exit",
+                                       json=payload, timeout=5)
                 if response.status_code == 200:
                     data = response.json()
-                    if data.get('trigger', False):
+                    if data.get('success', False):
                         self.logger.info("Exit trigger received")
                         return "exit"
-            except:
+            except Exception as e:
+                self.logger.warning(f"Failed to check exit trigger: {e}")
                 pass
 
+        return None
+
+    def get_latest_capture_from_server(self):
+        """Get latest capture from server"""
+        try:
+            response = requests.get(f"{self.server_url}/api/camera/latest-capture",
+                                  params={'camera_id': self.camera_id}, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success', False):
+                    return data.get('capture_data')
+            else:
+                self.logger.debug(f"No latest capture available: {response.status_code}")
+        except Exception as e:
+            self.logger.warning(f"Failed to get latest capture: {e}")
         return None
 
     def simple_plate_detection(self, image):

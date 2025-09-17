@@ -1,6 +1,7 @@
 {
-  "server_url": "http://your-server:5000",
-  "camera_id": "parking_area_1",
+  "// Configuration for parking area monitoring camera": "This config is for cameras that monitor parking areas",
+  "server_url": "http://localhost:5000",
+  "camera_id": "area",
   "camera_type": "auto",
   "camera_role": "parking_monitor",
   "streaming": {
@@ -31,5 +32,8 @@
     "area_name": "1A",
     "analysis_interval": 60,
     "slot_detection": true
+  },
+  "logging": {
+    "level": "INFO"
   }
 }

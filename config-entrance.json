@@ -1,5 +1,6 @@
 {
-  "server_url": "http://your-server:5000",
+  "// Configuration for entrance camera": "This config is for the entrance camera that handles vehicle arrivals",
+  "server_url": "http://localhost:5000",
   "camera_id": "entrance",
   "camera_type": "auto",
   "camera_role": "entrance",
@@ -25,5 +26,8 @@
     "exit_detection": false,
     "parking_monitor": false,
     "real_time_streaming": true
+  },
+  "logging": {
+    "level": "INFO"
   }
 }
