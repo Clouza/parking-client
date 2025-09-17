@@ -1,0 +1,42 @@
+# camera libraries
+picamera2
+
+# computer vision
+opencv-python
+
+# gpio control
+RPi.GPIO
+
+# http client
+requests
+urllib3
+
+# image processing and encoding
+numpy
+scikit-image
+
+# web dashboard
+flask
+
+# system monitoring
+psutil
+
+# additional dependencies for production features
+cryptography
+schedule
+pillow
+
+# optional for enhanced image processing
+# scikit-image
+
+# json handling (built-in)
+# threading (built-in)
+# logging (built-in)
+# datetime (built-in)
+# pathlib (built-in)
+# argparse (built-in)
+# sys (built-in)
+# time (built-in)
+# base64 (built-in)
+# os (built-in)
+# shutil (built-in)
