@@ -41,12 +41,78 @@ class IntegratedCameraClient:
         try:
             with open(config_file, 'r') as f:
                 self.config = json.load(f)
-                # Backward compatibility
-                self.server_url = self.config["server_url"]
-                self.camera_id = self.config["camera_id"]
+
+                # set default values for minimal config
+                self.server_url = self.config.get("server_url", "http://localhost:5000")
+                self.camera_id = self.config["camera_id"]  # required field
                 self.camera_type_config = self.config.get("camera_type", "auto")
+
+                # set default configuration sections
+                if "streaming" not in self.config:
+                    self.config["streaming"] = {
+                        "enabled": True,
+                        "fps": 15,
+                        "quality": 80,
+                        "resolution": {"width": 640, "height": 480}
+                    }
+
+                if "detection" not in self.config:
+                    self.config["detection"] = {
+                        "enabled": True,
+                        "confidence_threshold": 0.3,
+                        "cooldown": 5
+                    }
+
+                if "heartbeat" not in self.config:
+                    self.config["heartbeat"] = {"interval": 30}
+
+                if "features" not in self.config:
+                    # auto-configure features based on camera_id
+                    if self.camera_id == "entrance":
+                        self.config["features"] = {
+                            "entrance_detection": True,
+                            "exit_detection": False,
+                            "parking_monitor": False,
+                            "real_time_streaming": True
+                        }
+                    elif self.camera_id == "exit":
+                        self.config["features"] = {
+                            "entrance_detection": False,
+                            "exit_detection": True,
+                            "parking_monitor": False,
+                            "real_time_streaming": True
+                        }
+                    elif self.camera_id == "area":
+                        self.config["features"] = {
+                            "entrance_detection": False,
+                            "exit_detection": False,
+                            "parking_monitor": True,
+                            "real_time_streaming": True
+                        }
+                    else:
+                        self.config["features"] = {
+                            "entrance_detection": True,
+                            "exit_detection": False,
+                            "parking_monitor": False,
+                            "real_time_streaming": True
+                        }
+
+                if "logging" not in self.config:
+                    self.config["logging"] = {"level": "INFO"}
+
+                # set camera_role based on camera_id if not specified
+                if "camera_role" not in self.config:
+                    if self.camera_id == "area":
+                        self.config["camera_role"] = "parking_monitor"
+                    else:
+                        self.config["camera_role"] = self.camera_id
+
         except FileNotFoundError:
             print(f"Config file {config_file} not found!")
+            sys.exit(1)
+        except KeyError as e:
+            print(f"Missing required config field: {e}")
+            print("Config must contain at least: camera_id")
             sys.exit(1)
 
     def setup_logging(self):

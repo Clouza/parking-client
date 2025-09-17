@@ -1,5 +1,3 @@
 {
-  "server_url": "http://your-server:5000",
-  "camera_id": "entrance",
-  "camera_type": "auto"
+  "camera_id": "entrance"
 }
