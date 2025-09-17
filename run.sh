@@ -10,10 +10,23 @@ if [ ! -f "config.json" ]; then
     exit 1
 fi
 
-# install dependencies if needed
+# create virtual environment if not exists
+if [ ! -d "venv" ]; then
+    echo "creating virtual environment..."
+    python3 -m venv venv
+fi
+
+# activate virtual environment
+echo "activating virtual environment..."
+source venv/bin/activate
+
+# upgrade pip
+pip install --upgrade pip
+
+# install dependencies
 echo "installing dependencies..."
 pip install -r requirements.txt
 
 # run the camera client
 echo "starting camera client..."
-python3 camera_client.py
+python camera_client.py

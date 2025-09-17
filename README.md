@@ -23,6 +23,11 @@ chmod +x run.sh
 ./run.sh
 ```
 
+Script akan otomatis:
+- Buat virtual environment (jika belum ada)
+- Install dependencies ke dalam venv
+- Jalankan camera client
+
 ## API Endpoints Used
 
 ### Client sends to:
