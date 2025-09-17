@@ -73,7 +73,7 @@ class StreamingClient:
         camera_type = self.config.get('camera_type', 'auto')
 
         # Try Pi camera first if available
-        if camera_type in ['auto', 'pi'] and PICAMERA_AVAILABLE:
+        if camera_type in ['auto', 'pi', 'picamera'] and PICAMERA_AVAILABLE:
             try:
                 self.camera = Picamera2()
 

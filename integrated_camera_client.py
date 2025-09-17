@@ -133,7 +133,7 @@ class IntegratedCameraClient:
         camera_type = self.config.get('camera_type', 'auto')
 
         # Try Pi camera first
-        if camera_type in ["auto", "pi"] and PI_CAMERA_AVAILABLE:
+        if camera_type in ["auto", "pi", "picamera"] and PI_CAMERA_AVAILABLE:
             try:
                 self.camera = Picamera2()
                 self.camera.configure(self.camera.create_still_configuration())

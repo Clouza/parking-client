@@ -36,7 +36,7 @@ class ParkingCameraClient:
 
     def setup_camera(self):
         # try pi camera first
-        if self.camera_type_config in ["auto", "pi"] and PI_CAMERA_AVAILABLE:
+        if self.camera_type_config in ["auto", "pi", "picamera"] and PI_CAMERA_AVAILABLE:
             try:
                 self.camera = Picamera2()
                 self.camera.configure(self.camera.create_still_configuration())
