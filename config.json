@@ -1,7 +1,7 @@
 {
   "camera_id": "entrance",
   "server_url": "http://localhost:5000",
-  "camera_type": "auto",
+  "camera_type": "picamera",
   "streaming": {
     "enabled": true,
     "fps": 15,
