@@ -38,8 +38,9 @@ class IntegratedCameraClient:
 
         # Initialize components based on camera role
         self.setup_camera()
-        if self.config['features']['real_time_streaming']:
-            self.streaming_client = StreamingClient(self.config)
+        # disable streaming client to avoid camera resource conflicts
+        # if self.config['features']['real_time_streaming']:
+        #     self.streaming_client = StreamingClient(self.config)
 
     def load_config(self, config_file):
         try:
@@ -376,14 +377,15 @@ class IntegratedCameraClient:
         """Start all configured services"""
         services_started = []
 
-        # Start streaming if enabled
-        if self.config['features']['real_time_streaming'] and self.streaming_client:
-            if self.streaming_client.setup_camera() and self.streaming_client.connect_to_server():
-                if self.streaming_client.start_streaming():
-                    services_started.append("video streaming")
-                    self.logger.info("Video streaming started")
-            else:
-                self.logger.error("Failed to start streaming client")
+        # disable streaming to avoid camera resource conflicts
+        # # Start streaming if enabled
+        # if self.config['features']['real_time_streaming'] and self.streaming_client:
+        #     if self.streaming_client.setup_camera() and self.streaming_client.connect_to_server():
+        #         if self.streaming_client.start_streaming():
+        #             services_started.append("video streaming")
+        #             self.logger.info("Video streaming started")
+        #     else:
+        #         self.logger.error("Failed to start streaming client")
 
         # Start detection monitoring if enabled
         if self.config['detection']['enabled']:
