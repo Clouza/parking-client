@@ -288,6 +288,33 @@ class IntegratedCameraClient:
 
         return None
 
+    def send_capture_for_preview(self):
+        """Send camera capture for preview purposes"""
+        try:
+            image = self.capture_image()
+            if image is not None:
+                image_data = self.encode_image(image)
+                # Send as detection result with empty plate for preview
+                payload = {
+                    "camera_id": self.camera_id,
+                    "detected_plate": "",
+                    "confidence": 0.0,
+                    "image_data": image_data,
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                response = requests.post(f"{self.server_url}/api/detection/result", json=payload, timeout=10)
+                if response.status_code == 200:
+                    self.logger.debug("Preview capture sent successfully")
+                    return True
+                else:
+                    self.logger.warning(f"Preview capture failed: {response.status_code}")
+            else:
+                self.logger.warning("Failed to capture image for preview")
+        except Exception as e:
+            self.logger.error(f"Preview capture failed: {e}")
+        return False
+
     def get_latest_capture_from_server(self):
         """Get latest capture from server"""
         try:
@@ -399,6 +426,15 @@ class IntegratedCameraClient:
                     else:
                         self.logger.warning("Failed to send status")
                     last_status = current_time
+
+                # Send preview capture every 10 seconds
+                if not hasattr(self, 'last_preview_time'):
+                    self.last_preview_time = 0
+
+                if current_time - self.last_preview_time > 10:
+                    if self.send_capture_for_preview():
+                        self.logger.debug("Preview capture sent")
+                    self.last_preview_time = current_time
 
                 time.sleep(5)  # Main loop sleep
 
