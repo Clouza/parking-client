@@ -14,11 +14,8 @@ import cv2
 import socketio
 import numpy as np
 
-try:
-    from picamera2 import Picamera2
-    PICAMERA_AVAILABLE = True
-except ImportError:
-    PICAMERA_AVAILABLE = False
+# Disable picamera2 to avoid resource conflicts with libcamera
+PICAMERA_AVAILABLE = False
 
 # libcamera fallback
 try:

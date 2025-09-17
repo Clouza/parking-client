@@ -16,11 +16,8 @@ from datetime import datetime
 import cv2
 from streaming_client import StreamingClient
 
-try:
-    from picamera2 import Picamera2
-    PI_CAMERA_AVAILABLE = True
-except ImportError:
-    PI_CAMERA_AVAILABLE = False
+# Disable picamera2 to avoid resource conflicts with libcamera
+PI_CAMERA_AVAILABLE = False
 
 # libcamera fallback
 try:
