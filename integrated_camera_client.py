@@ -22,6 +22,13 @@ try:
 except ImportError:
     PI_CAMERA_AVAILABLE = False
 
+# libcamera fallback
+try:
+    from libcamera_wrapper import LibCameraWrapper
+    LIBCAMERA_AVAILABLE = True
+except ImportError:
+    LIBCAMERA_AVAILABLE = False
+
 class IntegratedCameraClient:
     def __init__(self, config_file="config.json"):
         self.load_config(config_file)
@@ -144,6 +151,19 @@ class IntegratedCameraClient:
             except Exception as e:
                 self.logger.warning(f"Pi camera setup failed: {e}")
 
+        # Try libcamera fallback for Pi
+        if camera_type in ["auto", "pi", "picamera"] and LIBCAMERA_AVAILABLE:
+            try:
+                width = self.config['streaming']['resolution']['width']
+                height = self.config['streaming']['resolution']['height']
+                self.camera = LibCameraWrapper(width=width, height=height)
+                self.camera.start()
+                self.camera_type = "pi_libcamera"
+                self.logger.info("Pi camera (libcamera) initialized successfully")
+                return
+            except Exception as e:
+                self.logger.warning(f"Pi camera libcamera setup failed: {e}")
+
         # Fallback to USB camera
         if camera_type in ["auto", "usb"]:
             try:
@@ -162,6 +182,10 @@ class IntegratedCameraClient:
     def capture_image(self):
         """Capture image from camera"""
         if self.camera_type == "pi":
+            image_array = self.camera.capture_array()
+            image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+            return image_bgr
+        elif self.camera_type == "pi_libcamera":
             image_array = self.camera.capture_array()
             image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
             return image_bgr

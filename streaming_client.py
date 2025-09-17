@@ -20,6 +20,13 @@ try:
 except ImportError:
     PICAMERA_AVAILABLE = False
 
+# libcamera fallback
+try:
+    from libcamera_wrapper import LibCameraWrapper
+    LIBCAMERA_AVAILABLE = True
+except ImportError:
+    LIBCAMERA_AVAILABLE = False
+
 class StreamingClient:
     def __init__(self, config):
         self.config = config
@@ -97,6 +104,20 @@ class StreamingClient:
             except Exception as e:
                 self.logger.warning(f"Pi camera failed: {e}")
 
+        # Try libcamera fallback for Pi
+        if camera_type in ['auto', 'pi', 'picamera'] and LIBCAMERA_AVAILABLE:
+            try:
+                width = self.config['streaming']['resolution']['width']
+                height = self.config['streaming']['resolution']['height']
+                self.camera = LibCameraWrapper(width=width, height=height)
+                self.camera.start()
+                self.camera_type = "pi_libcamera"
+                self.logger.info("Pi camera (libcamera) initialized for streaming")
+                return True
+
+            except Exception as e:
+                self.logger.warning(f"Pi camera libcamera failed: {e}")
+
         # Fallback to USB camera
         if camera_type in ['auto', 'usb']:
             try:
@@ -143,6 +164,12 @@ class StreamingClient:
         try:
             if self.camera_type == "pi":
                 # Capture from Pi camera
+                frame = self.camera.capture_array()
+                # Convert RGB to BGR for OpenCV compatibility
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            elif self.camera_type == "pi_libcamera":
+                # Capture from libcamera wrapper
                 frame = self.camera.capture_array()
                 # Convert RGB to BGR for OpenCV compatibility
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
