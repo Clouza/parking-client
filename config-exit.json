@@ -1,0 +1,29 @@
+{
+  "server_url": "http://your-server:5000",
+  "camera_id": "exit",
+  "camera_type": "auto",
+  "camera_role": "exit",
+  "streaming": {
+    "enabled": true,
+    "fps": 15,
+    "quality": 80,
+    "resolution": {
+      "width": 640,
+      "height": 480
+    }
+  },
+  "detection": {
+    "enabled": true,
+    "confidence_threshold": 0.3,
+    "cooldown": 5
+  },
+  "heartbeat": {
+    "interval": 30
+  },
+  "features": {
+    "entrance_detection": false,
+    "exit_detection": true,
+    "parking_monitor": false,
+    "real_time_streaming": true
+  }
+}

@@ -1,0 +1,363 @@
+#!/usr/bin/env python3
+"""
+Integrated Camera Client with Real-time Streaming
+Combines detection capabilities with real-time video streaming
+"""
+
+import json
+import time
+import requests
+import base64
+import threading
+import logging
+import argparse
+import sys
+from datetime import datetime
+import cv2
+from streaming_client import StreamingClient
+
+try:
+    from picamera2 import Picamera2
+    PI_CAMERA_AVAILABLE = True
+except ImportError:
+    PI_CAMERA_AVAILABLE = False
+
+class IntegratedCameraClient:
+    def __init__(self, config_file="config.json"):
+        self.load_config(config_file)
+        self.setup_logging()
+        self.camera = None
+        self.camera_type = None
+        self.running = False
+        self.streaming_client = None
+        self.detection_thread = None
+
+        # Initialize components based on camera role
+        self.setup_camera()
+        if self.config['features']['real_time_streaming']:
+            self.streaming_client = StreamingClient(self.config)
+
+    def load_config(self, config_file):
+        try:
+            with open(config_file, 'r') as f:
+                self.config = json.load(f)
+                # Backward compatibility
+                self.server_url = self.config["server_url"]
+                self.camera_id = self.config["camera_id"]
+                self.camera_type_config = self.config.get("camera_type", "auto")
+        except FileNotFoundError:
+            print(f"Config file {config_file} not found!")
+            sys.exit(1)
+
+    def setup_logging(self):
+        """Setup logging system"""
+        log_level = self.config.get('logging', {}).get('level', 'INFO')
+        logging.basicConfig(
+            level=getattr(logging, log_level.upper()),
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(f'camera_{self.config["camera_id"]}.log'),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger(__name__)
+
+    def setup_camera(self):
+        """Setup camera based on configuration"""
+        camera_type = self.config.get('camera_type', 'auto')
+
+        # Try Pi camera first
+        if camera_type in ["auto", "pi"] and PI_CAMERA_AVAILABLE:
+            try:
+                self.camera = Picamera2()
+                self.camera.configure(self.camera.create_still_configuration())
+                self.camera.start()
+                self.camera_type = "pi"
+                self.logger.info("Pi camera initialized successfully")
+                return
+            except Exception as e:
+                self.logger.warning(f"Pi camera setup failed: {e}")
+
+        # Fallback to USB camera
+        if camera_type in ["auto", "usb"]:
+            try:
+                self.camera = cv2.VideoCapture(0)
+                if not self.camera.isOpened():
+                    raise Exception("Cannot open USB camera")
+                self.camera_type = "usb"
+                self.logger.info("USB camera initialized successfully")
+                return
+            except Exception as e:
+                self.logger.error(f"USB camera setup failed: {e}")
+
+        self.logger.error("No camera available!")
+        sys.exit(1)
+
+    def capture_image(self):
+        """Capture image from camera"""
+        if self.camera_type == "pi":
+            image_array = self.camera.capture_array()
+            image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+            return image_bgr
+        else:
+            ret, frame = self.camera.read()
+            if not ret:
+                self.logger.error("Failed to capture image from USB camera")
+                return None
+            return frame
+
+    def encode_image(self, image):
+        """Encode image to base64"""
+        _, buffer = cv2.imencode('.jpg', image)
+        image_base64 = base64.b64encode(buffer).decode('utf-8')
+        return image_base64
+
+    def send_detection_result(self, plate_text, confidence, image_data):
+        """Send detection result to server"""
+        url = f"{self.server_url}/api/detection/result"
+
+        payload = {
+            "camera_id": self.camera_id,
+            "detected_plate": plate_text,
+            "confidence": confidence,
+            "image_data": image_data,
+            "timestamp": datetime.now().isoformat()
+        }
+
+        try:
+            response = requests.post(url, json=payload, timeout=10)
+            if response.status_code == 200:
+                result = response.json()
+                self.logger.info(f"Detection sent - action: {result.get('action', 'none')}")
+                return result
+            else:
+                self.logger.error(f"Server error: {response.status_code}")
+                return None
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Network error: {e}")
+            return None
+
+    def send_status(self):
+        """Send camera status to server"""
+        url = f"{self.server_url}/api/camera/status"
+
+        payload = {
+            "camera_id": self.camera_id,
+            "camera_role": self.config.get('camera_role', 'unknown'),
+            "status": "online",
+            "camera_type": self.camera_type,
+            "streaming_active": self.streaming_client.streaming_active if self.streaming_client else False,
+            "features": self.config['features'],
+            "timestamp": datetime.now().isoformat()
+        }
+
+        try:
+            response = requests.post(url, json=payload, timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+
+    def check_for_triggers(self):
+        """Check for detection triggers from server"""
+        camera_role = self.config.get('camera_role', 'entrance')
+
+        if camera_role == 'entrance' and self.config['features']['entrance_detection']:
+            try:
+                response = requests.get(f"{self.server_url}/api/camera/trigger-entrance", timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('trigger', False):
+                        self.logger.info("Entrance trigger received")
+                        return "entrance"
+            except:
+                pass
+
+        elif camera_role == 'exit' and self.config['features']['exit_detection']:
+            try:
+                response = requests.get(f"{self.server_url}/api/camera/trigger-exit", timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('trigger', False):
+                        self.logger.info("Exit trigger received")
+                        return "exit"
+            except:
+                pass
+
+        return None
+
+    def simple_plate_detection(self, image):
+        """Simple mock detection - replace with actual license plate recognition"""
+        # This is a placeholder - implement actual plate detection here
+        import random
+        plates = ["ABC123", "XYZ789", "DEF456", "GHI321"]
+        return random.choice(plates), round(random.uniform(0.7, 0.95), 2)
+
+    def detection_worker(self):
+        """Background thread for detection monitoring"""
+        last_trigger_check = time.time()
+
+        while self.running:
+            current_time = time.time()
+
+            # Check for triggers periodically
+            if current_time - last_trigger_check > 2:
+                trigger_type = self.check_for_triggers()
+
+                if trigger_type:
+                    self.logger.info(f"Processing {trigger_type} detection...")
+
+                    # Capture image
+                    image = self.capture_image()
+                    if image is not None:
+                        # Detect plate
+                        plate_text, confidence = self.simple_plate_detection(image)
+
+                        # Encode image
+                        image_data = self.encode_image(image)
+
+                        # Send detection result
+                        result = self.send_detection_result(plate_text, confidence, image_data)
+
+                        if result:
+                            self.logger.info(f"Plate detected: {plate_text} (confidence: {confidence:.2f})")
+                        else:
+                            self.logger.warning("Failed to send detection result")
+
+                last_trigger_check = current_time
+
+            time.sleep(0.5)  # Check more frequently
+
+    def start_services(self):
+        """Start all configured services"""
+        services_started = []
+
+        # Start streaming if enabled
+        if self.config['features']['real_time_streaming'] and self.streaming_client:
+            if self.streaming_client.setup_camera() and self.streaming_client.connect_to_server():
+                if self.streaming_client.start_streaming():
+                    services_started.append("video streaming")
+                    self.logger.info("Video streaming started")
+            else:
+                self.logger.error("Failed to start streaming client")
+
+        # Start detection monitoring if enabled
+        if self.config['detection']['enabled']:
+            self.detection_thread = threading.Thread(target=self.detection_worker, daemon=True)
+            self.detection_thread.start()
+            services_started.append("detection monitoring")
+            self.logger.info("Detection monitoring started")
+
+        return services_started
+
+    def run(self):
+        """Main run loop"""
+        self.logger.info(f"Integrated camera client starting...")
+        self.logger.info(f"Camera ID: {self.camera_id}")
+        self.logger.info(f"Camera Role: {self.config.get('camera_role', 'unknown')}")
+        self.logger.info(f"Camera Type: {self.camera_type}")
+        self.logger.info(f"Server: {self.server_url}")
+
+        self.running = True
+
+        # Start services
+        services = self.start_services()
+        if services:
+            self.logger.info(f"Started services: {', '.join(services)}")
+        else:
+            self.logger.warning("No services started")
+
+        # Main status loop
+        last_status = time.time()
+        heartbeat_interval = self.config['heartbeat']['interval']
+
+        try:
+            while self.running:
+                current_time = time.time()
+
+                # Send status heartbeat
+                if current_time - last_status > heartbeat_interval:
+                    if self.send_status():
+                        self.logger.debug("Status sent successfully")
+                    else:
+                        self.logger.warning("Failed to send status")
+                    last_status = current_time
+
+                time.sleep(5)  # Main loop sleep
+
+        except KeyboardInterrupt:
+            self.logger.info("Stopping camera client...")
+        finally:
+            self.cleanup()
+
+    def cleanup(self):
+        """Cleanup resources"""
+        self.running = False
+
+        # Stop streaming
+        if self.streaming_client:
+            self.streaming_client.cleanup()
+
+        # Wait for detection thread to finish
+        if self.detection_thread:
+            self.detection_thread.join(timeout=5)
+
+        # Cleanup camera
+        if self.camera:
+            if self.camera_type == "pi":
+                self.camera.stop()
+                self.camera.close()
+            else:
+                self.camera.release()
+
+        self.logger.info("Camera client stopped")
+
+def main():
+    parser = argparse.ArgumentParser(description="Integrated Camera Client with Streaming")
+    parser.add_argument(
+        "--config",
+        default="config.json",
+        help="Path to config file"
+    )
+    parser.add_argument(
+        "--test-camera",
+        action="store_true",
+        help="Test camera capture only"
+    )
+    parser.add_argument(
+        "--streaming-only",
+        action="store_true",
+        help="Start streaming only (no detection)"
+    )
+
+    args = parser.parse_args()
+
+    if args.test_camera:
+        # Test camera capture
+        client = IntegratedCameraClient(args.config)
+        image = client.capture_image()
+        if image is not None:
+            cv2.imwrite("test_capture.jpg", image)
+            print("Test capture saved as test_capture.jpg")
+        else:
+            print("Camera test failed")
+        client.cleanup()
+        return
+
+    if args.streaming_only:
+        # Streaming only mode
+        with open(args.config, 'r') as f:
+            config = json.load(f)
+
+        streaming_client = StreamingClient(config)
+        try:
+            streaming_client.run()
+        finally:
+            streaming_client.cleanup()
+        return
+
+    # Full integrated client
+    client = IntegratedCameraClient(args.config)
+    client.run()
+
+if __name__ == "__main__":
+    main()

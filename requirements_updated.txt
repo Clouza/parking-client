@@ -1,0 +1,6 @@
+picamera2
+opencv-python-headless
+requests
+numpy
+python-socketio[client]==5.7.0
+python-engineio==4.7.1
