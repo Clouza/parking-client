@@ -1,3 +1,33 @@
 {
-  "camera_id": "entrance"
+  "camera_id": "entrance",
+  "server_url": "http://localhost:5000",
+  "camera_type": "auto",
+  "streaming": {
+    "enabled": true,
+    "fps": 15,
+    "quality": 80,
+    "resolution": {
+      "width": 640,
+      "height": 480
+    }
+  },
+  "detection": {
+    "enabled": true,
+    "interval": 1.0
+  },
+  "heartbeat": {
+    "interval": 30
+  },
+  "server": {
+    "timeout": 10
+  },
+  "features": {
+    "real_time_streaming": true,
+    "entrance_detection": true,
+    "exit_detection": false
+  },
+  "camera_role": "entrance",
+  "web_dashboard": {
+    "port": 8080
+  }
 }

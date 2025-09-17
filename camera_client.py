@@ -27,7 +27,7 @@ class ParkingCameraClient:
         try:
             with open(config_file, 'r') as f:
                 config = json.load(f)
-                self.server_url = config["server_url"]
+                self.server_url = config.get("server_url", "http://localhost:5000")
                 self.camera_id = config["camera_id"]
                 self.camera_type_config = config.get("camera_type", "auto")
         except FileNotFoundError:
