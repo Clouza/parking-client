@@ -1,4 +1,4 @@
 picamera2
-opencv-python
+opencv-python-headless
 requests
 numpy
