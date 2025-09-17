@@ -2,3 +2,4 @@ picamera2
 opencv-python-headless
 requests
 numpy
+python-socketio
