@@ -92,12 +92,21 @@ cd picamera2
 pip install .
 ```
 
-### Jika opencv error:
+### Jika opencv error (libGL.so.1):
 
 ```bash
-# Install dependencies opencv
+# Install OpenGL dan multimedia dependencies
 sudo apt install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     libgtk-3-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
     libcanberra-gtk-module \
     libcanberra-gtk3-module
 ```

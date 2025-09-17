@@ -17,7 +17,14 @@ sudo apt install -y \
     python3-requests \
     libcap-dev \
     pkg-config \
-    python3-picamera2
+    python3-picamera2 \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgtk-3-dev
 
 # verify installations
 echo "verifying system installations..."

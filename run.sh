@@ -15,7 +15,9 @@ echo "checking system dependencies..."
 if ! dpkg -l | grep -q libcap-dev; then
     echo "installing system dependencies (requires sudo)..."
     sudo apt update
-    sudo apt install -y python3-venv python3-pip libcap-dev pkg-config
+    sudo apt install -y python3-venv python3-pip libcap-dev pkg-config \
+        libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev \
+        libgomp1 libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev
 fi
 
 # create virtual environment if not exists
