@@ -25,11 +25,12 @@ except ImportError:
     LIBCAMERA_AVAILABLE = False
 
 class StreamingClient:
-    def __init__(self, config):
+    def __init__(self, config, shared_camera=None, shared_camera_type=None):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.camera = None
-        self.camera_type = None
+        self.camera = shared_camera  # use shared camera instance
+        self.camera_type = shared_camera_type
+        self._shared_camera = shared_camera is not None  # flag for cleanup
         self.streaming_active = False
         self.sio = None
         self.stream_thread = None
@@ -74,6 +75,11 @@ class StreamingClient:
 
     def setup_camera(self):
         """Initialize camera based on configuration"""
+        # if shared camera provided, skip camera setup
+        if self.camera is not None:
+            self.logger.info(f"Using shared camera instance (type: {self.camera_type})")
+            return True
+
         camera_type = self.config.get('camera_type', 'auto')
 
         # Try Pi camera first if available
@@ -315,7 +321,8 @@ class StreamingClient:
         if self.sio and self.sio.connected:
             self.sio.disconnect()
 
-        if self.camera:
+        # don't cleanup shared camera - let parent handle it
+        if self.camera and not self._shared_camera:
             if self.camera_type == "pi":
                 self.camera.stop()
                 self.camera.close()

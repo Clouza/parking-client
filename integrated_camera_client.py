@@ -47,7 +47,9 @@ class IntegratedCameraClient:
         self.setup_camera()
         # enable streaming client for real-time preview
         if self.config['features']['real_time_streaming']:
-            self.streaming_client = StreamingClient(self.config)
+            self.streaming_client = StreamingClient(self.config,
+                                                   shared_camera=self.camera,
+                                                   shared_camera_type=self.camera_type)
 
     def load_config(self, config_file):
         try:
