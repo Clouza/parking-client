@@ -45,9 +45,9 @@ class IntegratedCameraClient:
 
         # Initialize components based on camera role
         self.setup_camera()
-        # disable streaming client to avoid camera resource conflicts
-        # if self.config['features']['real_time_streaming']:
-        #     self.streaming_client = StreamingClient(self.config)
+        # enable streaming client for real-time preview
+        if self.config['features']['real_time_streaming']:
+            self.streaming_client = StreamingClient(self.config)
 
     def load_config(self, config_file):
         try:
@@ -380,19 +380,32 @@ class IntegratedCameraClient:
                 if trigger_type:
                     self.logger.info(f"Processing {trigger_type} capture...")
 
-                    # Capture high-quality image for user review
-                    image = self.capture_image()
-                    if image is not None:
-                        # Encode image only (no detection yet)
-                        image_data = self.encode_image(image)
+                    # pause streaming for high-quality capture
+                    streaming_was_active = self.pause_streaming()
 
-                        # Send capture result without plate detection
-                        result = self.send_detection_result("", 0.0, image_data)
+                    try:
+                        # small delay to ensure camera resource is freed
+                        time.sleep(0.2)
 
-                        if result:
-                            self.logger.info(f"High-quality image captured and sent for user review")
-                        else:
-                            self.logger.warning("Failed to send capture result")
+                        # capture high-quality image for user review
+                        image = self.capture_image()
+                        if image is not None:
+                            # encode image only (no detection yet)
+                            image_data = self.encode_image(image)
+
+                            # send capture result without plate detection
+                            result = self.send_detection_result("", 0.0, image_data)
+
+                            if result:
+                                self.logger.info(f"High-quality image captured and sent for user review")
+                            else:
+                                self.logger.warning("Failed to send capture result")
+                    finally:
+                        # resume streaming if it was active
+                        if streaming_was_active:
+                            # small delay before resuming
+                            time.sleep(0.2)
+                            self.resume_streaming()
 
                 last_trigger_check = current_time
 
@@ -402,15 +415,14 @@ class IntegratedCameraClient:
         """Start all configured services"""
         services_started = []
 
-        # disable streaming to avoid camera resource conflicts
-        # # Start streaming if enabled
-        # if self.config['features']['real_time_streaming'] and self.streaming_client:
-        #     if self.streaming_client.setup_camera() and self.streaming_client.connect_to_server():
-        #         if self.streaming_client.start_streaming():
-        #             services_started.append("video streaming")
-        #             self.logger.info("Video streaming started")
-        #     else:
-        #         self.logger.error("Failed to start streaming client")
+        # start streaming for real-time preview
+        if self.config['features']['real_time_streaming'] and self.streaming_client:
+            if self.streaming_client.setup_camera() and self.streaming_client.connect_to_server():
+                if self.streaming_client.start_streaming():
+                    services_started.append("video streaming")
+                    self.logger.info("Video streaming started")
+            else:
+                self.logger.error("Failed to start streaming client")
 
         # Start detection monitoring if enabled
         if self.config['detection']['enabled']:
@@ -420,6 +432,22 @@ class IntegratedCameraClient:
             self.logger.info("Detection monitoring started")
 
         return services_started
+
+    def pause_streaming(self):
+        """pause streaming for high-quality capture"""
+        if self.streaming_client and self.streaming_client.streaming_active:
+            self.streaming_client.stop_streaming()
+            self.logger.info("streaming paused for capture")
+            return True
+        return False
+
+    def resume_streaming(self):
+        """resume streaming after capture"""
+        if self.streaming_client and not self.streaming_client.streaming_active:
+            self.streaming_client.start_streaming()
+            self.logger.info("streaming resumed")
+            return True
+        return False
 
     def run(self):
         """Main run loop"""
