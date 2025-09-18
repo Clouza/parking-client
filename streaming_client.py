@@ -178,7 +178,13 @@ class StreamingClient:
                 # Convert RGB to BGR for OpenCV compatibility
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-            else:  # USB camera
+            elif self.camera_type == "usb_fswebcam":
+                # Capture from fswebcam wrapper
+                frame = self.camera.capture_array()
+                # Convert RGB to BGR for OpenCV compatibility
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            else:  # USB camera with opencv
                 ret, frame = self.camera.read()
                 if not ret:
                     return None
