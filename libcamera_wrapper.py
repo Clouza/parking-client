@@ -24,16 +24,17 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture single frame for analysis using libcamera-still
+            # capture using libcamera-vid with minimal params
             cmd = [
-                'libcamera-still',
+                'libcamera-vid',
+                '--frames', '1',
                 '--output', temp_path
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
-                raise Exception(f"libcamera-still failed: {result.stderr}")
+                raise Exception(f"libcamera-vid failed: {result.stderr}")
 
             # read image file
             image = cv2.imread(temp_path)
