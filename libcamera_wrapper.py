@@ -23,20 +23,11 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture image using libcamera-vid with better exposure control
+            # capture image using libcamera-vid with default settings
             cmd = [
                 'libcamera-vid',
-                '--width', str(self.width),
-                '--height', str(self.height),
-                '--timeout', '3000',  # longer timeout for better exposure
-                '--nopreview',
-                '--frames', '1',      # capture single frame
-                '--codec', 'mjpeg',   # output as jpeg
-                '--denoise', 'auto',  # automatic noise reduction
-                '--awb', 'auto',      # auto white balance
-                '--metering', 'centre', # center weighted metering
-                '--ev', '0',          # exposure compensation
-                '--gain', '1.0',      # reasonable gain
+                '--frames', '1',
+                '--codec', 'mjpeg',
                 '--output', temp_path
             ]
 
