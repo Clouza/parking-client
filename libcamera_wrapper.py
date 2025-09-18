@@ -24,10 +24,11 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture using libcamera-vid with minimal params
+            # capture single frame for analysis using libcamera-vid
             cmd = [
                 'libcamera-vid',
                 '--frames', '1',
+                '--codec', 'mjpeg',
                 '--output', temp_path
             ]
 
@@ -70,9 +71,12 @@ class LibCameraWrapper:
         """Start continuous streaming for real-time preview"""
         if self.streaming_process is None:
             try:
-                # start continuous streaming with h264 like your working command
+                # start continuous streaming
                 cmd = [
-                    'libcamera-vid'
+                    'libcamera-vid',
+                    '--inline',
+                    '--listen',
+                    '--codec', 'mjpeg'
                 ]
                 self.streaming_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print("Started libcamera-vid streaming")
