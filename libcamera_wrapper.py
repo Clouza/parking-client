@@ -23,15 +23,15 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture image using libcamera-still with optimal settings and exclusive access
+            # capture image using libcamera-vid with better exposure control
             cmd = [
-                'libcamera-still',
+                'libcamera-vid',
                 '--width', str(self.width),
                 '--height', str(self.height),
                 '--timeout', '3000',  # longer timeout for better exposure
                 '--nopreview',
-                '--immediate',        # capture immediately without delay
-                '--quality', '95',    # high quality jpeg
+                '--frames', '1',      # capture single frame
+                '--codec', 'mjpeg',   # output as jpeg
                 '--denoise', 'auto',  # automatic noise reduction
                 '--awb', 'auto',      # auto white balance
                 '--metering', 'centre', # center weighted metering
@@ -43,7 +43,7 @@ class LibCameraWrapper:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
-                raise Exception(f"libcamera-still failed: {result.stderr}")
+                raise Exception(f"libcamera-vid failed: {result.stderr}")
 
             # read image file
             image = cv2.imread(temp_path)
