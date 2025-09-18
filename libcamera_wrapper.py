@@ -24,18 +24,16 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture single frame for analysis using libcamera-vid
+            # capture single frame for analysis using libcamera-still
             cmd = [
-                'libcamera-vid',
-                '--frames', '1',
-                '--codec', 'mjpeg',
+                'libcamera-still',
                 '--output', temp_path
             ]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode != 0:
-                raise Exception(f"libcamera-vid failed: {result.stderr}")
+                raise Exception(f"libcamera-still failed: {result.stderr}")
 
             # read image file
             image = cv2.imread(temp_path)
@@ -71,12 +69,9 @@ class LibCameraWrapper:
         """Start continuous streaming for real-time preview"""
         if self.streaming_process is None:
             try:
-                # start continuous streaming
+                # start continuous streaming with h264 like your working command
                 cmd = [
-                    'libcamera-vid',
-                    '--inline',
-                    '--listen',
-                    '--codec', 'mjpeg'
+                    'libcamera-vid'
                 ]
                 self.streaming_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print("Started libcamera-vid streaming")
