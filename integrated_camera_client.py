@@ -26,6 +26,13 @@ try:
 except ImportError:
     LIBCAMERA_AVAILABLE = False
 
+# fswebcam fallback
+try:
+    from fswebcam_wrapper import FSWebcamWrapper
+    FSWEBCAM_AVAILABLE = True
+except ImportError:
+    FSWEBCAM_AVAILABLE = False
+
 class IntegratedCameraClient:
     def __init__(self, config_file="config.json"):
         self.load_config(config_file)
@@ -164,8 +171,25 @@ class IntegratedCameraClient:
 
         # Fallback to USB camera
         if camera_type in ["auto", "usb"]:
+            # try fswebcam if configured
+            if self.config.get('use_fswebcam', False) and FSWEBCAM_AVAILABLE:
+                try:
+                    camera_device = self.config.get('camera_device', 0)
+                    self.camera = FSWebcamWrapper(
+                        device=camera_device,
+                        width=self.config.get('streaming', {}).get('resolution', {}).get('width', 640),
+                        height=self.config.get('streaming', {}).get('resolution', {}).get('height', 480)
+                    )
+                    self.camera_type = "usb_fswebcam"
+                    self.logger.info("USB camera (fswebcam) initialized successfully")
+                    return
+                except Exception as e:
+                    self.logger.warning(f"fswebcam setup failed: {e}")
+
+            # fallback to opencv
             try:
-                self.camera = cv2.VideoCapture(0)
+                camera_device = self.config.get('camera_device', 0)
+                self.camera = cv2.VideoCapture(camera_device)
                 if not self.camera.isOpened():
                     raise Exception("Cannot open USB camera")
                 self.camera_type = "usb"
@@ -184,6 +208,10 @@ class IntegratedCameraClient:
             image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
             return image_bgr
         elif self.camera_type == "pi_libcamera":
+            image_array = self.camera.capture_array()
+            image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+            return image_bgr
+        elif self.camera_type == "usb_fswebcam":
             image_array = self.camera.capture_array()
             image_bgr = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
             return image_bgr

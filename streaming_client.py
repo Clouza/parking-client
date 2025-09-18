@@ -118,7 +118,8 @@ class StreamingClient:
         # Fallback to USB camera
         if camera_type in ['auto', 'usb']:
             try:
-                self.camera = cv2.VideoCapture(0)
+                camera_device = self.config.get('camera_device', 0)
+                self.camera = cv2.VideoCapture(camera_device)
                 if not self.camera.isOpened():
                     raise Exception("Cannot open USB camera")
 

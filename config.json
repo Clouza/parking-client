@@ -2,6 +2,8 @@
   "camera_id": "entrance",
   "server_url": "http://localhost:5000",
   "camera_type": "pi",
+  "camera_device": 0,
+  "use_fswebcam": false,
   "streaming": {
     "enabled": true,
     "fps": 15,
