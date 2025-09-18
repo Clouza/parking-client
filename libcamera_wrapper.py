@@ -15,6 +15,7 @@ class LibCameraWrapper:
         self.width = width
         self.height = height
         self.camera_type = "pi_libcamera"
+        self.streaming_process = None
 
     def capture_array(self):
         """Capture image using libcamera-still and return as numpy array"""
@@ -23,7 +24,7 @@ class LibCameraWrapper:
             with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
                 temp_path = temp_file.name
 
-            # capture image using libcamera-vid with default settings
+            # capture single frame for analysis using libcamera-vid
             cmd = [
                 'libcamera-vid',
                 '--frames', '1',
@@ -66,9 +67,36 @@ class LibCameraWrapper:
         """Compatibility method - libcamera doesn't need stop"""
         pass
 
+    def start_streaming(self):
+        """Start continuous streaming for real-time preview"""
+        if self.streaming_process is None:
+            try:
+                # start continuous streaming
+                cmd = [
+                    'libcamera-vid',
+                    '--inline',
+                    '--listen',
+                    '--codec', 'mjpeg'
+                ]
+                self.streaming_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print("Started libcamera-vid streaming")
+            except Exception as e:
+                print(f"Failed to start streaming: {e}")
+
+    def stop_streaming(self):
+        """Stop continuous streaming"""
+        if self.streaming_process:
+            try:
+                self.streaming_process.terminate()
+                self.streaming_process.wait(timeout=5)
+                self.streaming_process = None
+                print("Stopped libcamera-vid streaming")
+            except Exception as e:
+                print(f"Error stopping streaming: {e}")
+
     def close(self):
-        """Compatibility method - libcamera doesn't need close"""
-        pass
+        """Stop streaming and cleanup"""
+        self.stop_streaming()
 
 def test_libcamera():
     """Test function to verify libcamera works"""
