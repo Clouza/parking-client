@@ -1,4 +1,5 @@
 {
+  "_comment": "Change camera_id to one of: entrance, exit, fakultas_teknik, fakultas_kedokteran, fakultas_hukum",
   "camera_id": "entrance",
   "server_url": "http://localhost:5000",
   "camera_type": "pi",
@@ -26,10 +27,19 @@
   "features": {
     "real_time_streaming": true,
     "entrance_detection": true,
-    "exit_detection": false
+    "exit_detection": false,
+    "parking_area_monitoring": false
   },
   "camera_role": "entrance",
+  "capture_endpoint": "/api/camera/capture",
   "web_dashboard": {
     "port": 8080
+  },
+  "_available_camera_ids": {
+    "entrance": "For vehicle entry detection at main gate",
+    "exit": "For vehicle exit detection at main gate",
+    "fakultas_teknik": "For monitoring Fakultas Teknik parking area",
+    "fakultas_kedokteran": "For monitoring Fakultas Kedokteran parking area",
+    "fakultas_hukum": "For monitoring Fakultas Hukum parking area"
   }
 }
