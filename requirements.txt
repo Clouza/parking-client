@@ -3,3 +3,5 @@ opencv-python-headless
 requests
 numpy
 python-socketio
+pyjwt
+cryptography
