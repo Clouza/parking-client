@@ -153,7 +153,7 @@ class StreamingClient:
                 server_url += ':5000'
 
             socketio_url = f"http://{server_url}"
-            self.sio.connect(socketio_url, namespaces=['/'])
+            self.sio.connect(socketio_url)
             return True
 
         except Exception as e:
