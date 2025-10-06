@@ -35,22 +35,6 @@
   "web_dashboard": {
     "port": 8080
   },
-  "security": {
-    "jwt_secret": "your-secret-key-change-this-in-production",
-    "jwt_algorithm": "HS256",
-    "token_expiry": 3600,
-    "rate_limiting": {
-      "enabled": true,
-      "requests_per_second": 10,
-      "burst_size": 20,
-      "window_seconds": 60,
-      "max_requests": 100
-    },
-    "security_logging": {
-      "enabled": true,
-      "log_file": "security.log"
-    }
-  },
   "_available_camera_ids": {
     "entrance": "For vehicle entry detection at main gate",
     "exit": "For vehicle exit detection at main gate",
