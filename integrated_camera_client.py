@@ -96,7 +96,7 @@ class IntegratedCameraClient:
                             "parking_monitor": False,
                             "real_time_streaming": True
                         }
-                    elif self.camera_id == "area":
+                    elif self.camera_id in ["area", "fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
                         self.config["features"] = {
                             "entrance_detection": False,
                             "exit_detection": False,
@@ -116,7 +116,7 @@ class IntegratedCameraClient:
 
                 # set camera_role based on camera_id if not specified
                 if "camera_role" not in self.config:
-                    if self.camera_id == "area":
+                    if self.camera_id in ["area", "fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
                         self.config["camera_role"] = "parking_monitor"
                     else:
                         self.config["camera_role"] = self.camera_id
@@ -255,6 +255,37 @@ class IntegratedCameraClient:
             self.logger.error(f"Network error: {e}")
             return None
 
+    def send_area_capture(self):
+        """Send camera capture for parking area monitoring"""
+        url = f"{self.server_url}{self.config.get('capture_endpoint', '/api/camera/capture')}"
+
+        try:
+            image = self.capture_image()
+            if image is None:
+                self.logger.warning("Failed to capture image for area monitoring")
+                return False
+
+            image_data = f"data:image/jpeg;base64,{self.encode_image(image)}"
+
+            payload = {
+                "camera_id": self.camera_id,
+                "image_data": image_data,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            response = requests.post(url, json=payload, timeout=15)
+            if response.status_code == 200:
+                result = response.json()
+                detected = result.get('detected_vehicles', 0)
+                self.logger.info(f"Area capture sent - detected vehicles: {detected}")
+                return True
+            else:
+                self.logger.error(f"Server error: {response.status_code}")
+                return False
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Network error sending area capture: {e}")
+            return False
+
     def send_status(self):
         """Send camera status to server"""
         url = f"{self.server_url}/api/camera/status"
@@ -371,16 +402,20 @@ class IntegratedCameraClient:
     def detection_worker(self):
         """Background thread for detection monitoring"""
         last_trigger_check = time.time()
+        last_area_capture = time.time()
+
+        # configure area capture interval based on camera role
+        area_capture_interval = self.config.get('detection', {}).get('interval', 30.0)
+        if area_capture_interval < 5:
+            area_capture_interval = 30.0  # minimum 30 seconds for area monitoring
 
         while self.running:
             current_time = time.time()
 
-            # Check for triggers periodically
-            if current_time - last_trigger_check > 2:
-                trigger_type = self.check_for_triggers()
-
-                if trigger_type:
-                    self.logger.info(f"Processing {trigger_type} capture...")
+            # parking area monitoring mode
+            if self.config['features'].get('parking_monitor', False):
+                if current_time - last_area_capture > area_capture_interval:
+                    self.logger.info("Capturing parking area for monitoring...")
 
                     # pause streaming for high-quality capture
                     streaming_was_active = self.pause_streaming()
@@ -389,27 +424,56 @@ class IntegratedCameraClient:
                         # small delay to ensure camera resource is freed
                         time.sleep(0.2)
 
-                        # capture high-quality image for user review
-                        image = self.capture_image()
-                        if image is not None:
-                            # encode image only (no detection yet)
-                            image_data = self.encode_image(image)
-
-                            # send capture result without plate detection
-                            result = self.send_detection_result("", 0.0, image_data)
-
-                            if result:
-                                self.logger.info(f"High-quality image captured and sent for user review")
-                            else:
-                                self.logger.warning("Failed to send capture result")
+                        # send area capture
+                        if self.send_area_capture():
+                            self.logger.info("Area capture sent successfully")
+                        else:
+                            self.logger.warning("Failed to send area capture")
                     finally:
                         # resume streaming if it was active
                         if streaming_was_active:
-                            # small delay before resuming
                             time.sleep(0.2)
                             self.resume_streaming()
 
-                last_trigger_check = current_time
+                    last_area_capture = current_time
+
+            # entrance/exit detection mode
+            else:
+                # Check for triggers periodically
+                if current_time - last_trigger_check > 2:
+                    trigger_type = self.check_for_triggers()
+
+                    if trigger_type:
+                        self.logger.info(f"Processing {trigger_type} capture...")
+
+                        # pause streaming for high-quality capture
+                        streaming_was_active = self.pause_streaming()
+
+                        try:
+                            # small delay to ensure camera resource is freed
+                            time.sleep(0.2)
+
+                            # capture high-quality image for user review
+                            image = self.capture_image()
+                            if image is not None:
+                                # encode image only (no detection yet)
+                                image_data = self.encode_image(image)
+
+                                # send capture result without plate detection
+                                result = self.send_detection_result("", 0.0, image_data)
+
+                                if result:
+                                    self.logger.info(f"High-quality image captured and sent for user review")
+                                else:
+                                    self.logger.warning("Failed to send capture result")
+                        finally:
+                            # resume streaming if it was active
+                            if streaming_was_active:
+                                # small delay before resuming
+                                time.sleep(0.2)
+                                self.resume_streaming()
+
+                    last_trigger_check = current_time
 
             time.sleep(0.5)  # Check more frequently
 
