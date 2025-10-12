@@ -96,7 +96,7 @@ class IntegratedCameraClient:
                             "parking_monitor": False,
                             "real_time_streaming": True
                         }
-                    elif self.camera_id in ["area", "fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
+                    elif self.camera_id in ["fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
                         self.config["features"] = {
                             "entrance_detection": False,
                             "exit_detection": False,
@@ -116,7 +116,7 @@ class IntegratedCameraClient:
 
                 # set camera_role based on camera_id if not specified
                 if "camera_role" not in self.config:
-                    if self.camera_id in ["area", "fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
+                    if self.camera_id in ["fakultas_teknik", "fakultas_kedokteran", "fakultas_hukum"]:
                         self.config["camera_role"] = "parking_monitor"
                     else:
                         self.config["camera_role"] = self.camera_id

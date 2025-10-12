@@ -32,12 +32,12 @@ echo "Camera ID: $CAMERA_ID"
 
 # validate camera_id
 case $CAMERA_ID in
-    "entrance"|"exit"|"area")
+    "entrance"|"exit"|"fakultas_teknik"|"fakultas_kedokteran"|"fakultas_hukum")
         echo "✓ Valid camera type: $CAMERA_ID"
         ;;
     *)
         echo "⚠ Warning: Unknown camera_id '$CAMERA_ID'"
-        echo "  Valid options: entrance, exit, area"
+        echo "  Valid options: entrance, exit, fakultas_teknik, fakultas_kedokteran, fakultas_hukum"
         echo "  Proceeding anyway..."
         ;;
 esac
